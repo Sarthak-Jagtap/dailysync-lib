@@ -1,8 +1,7 @@
 // [MODIFIED FILE: lib/view/home_screen.dart]
 
 import 'package:dailysync/views/dashboard.dart';
-import 'package:dailysync/views/health_main.dart';
-
+import 'package:dailysync/health_manager/views/health_home.dart';
 // [NEW IMPORTS]
 import 'package:dailysync/views/routine_main_screen.dart'; // <--- ADD THIS
 import 'package:dailysync/views/productivity_main_screen.dart'; // <--- ADD THIS
@@ -32,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _pages = [
       const HomeDashboard(), // Dashboard summary
-      const HealthManagerHome(), // Health component
+      const HealthHome(), // Health component
       const Center(child: Text("Finance Screen")), // Your Expense/Finance Manager Placeholder
       const ProductivityMainScreen(), // <--- MODIFIED TO USE NEW SCREEN
       const TodoMain(),

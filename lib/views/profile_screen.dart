@@ -6,7 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; 
 import 'achievements_screen.dart';
 import 'streak_screen.dart';
-import 'goals_screen.dart';
 import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -216,8 +215,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             icon: Icons.flag,
             color: Colors.purple,
             onTap: () {
-              Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => const GoalsScreen()));
+              // Navigator.of(context)
+              //     .push(MaterialPageRoute(builder: (_) => const GoalsScreen()));
             },
           ),
         ),

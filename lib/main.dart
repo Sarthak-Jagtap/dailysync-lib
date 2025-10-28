@@ -1,53 +1,59 @@
-// import 'package:dailysync/controllers/health_controller.dart'; 
-import 'health_manager/controllers/health_controller.dart';
-// import 'health_manager/views/health_home.dart';
-
-import 'package:dailysync/controllers/theme_controller.dart'; 
-import 'package:dailysync/views/splash_screen.dart'; 
-import 'package:firebase_core/firebase_core.dart';
+// lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 
-void main() async {
+// existing app controllers / screens
+import 'package:dailysync/controllers/theme_controller.dart';
+import 'package:dailysync/views/splash_screen.dart';
+
+// Health manager imports (ensure files exist under lib/health_manager/)
+import 'health_manager/controllers/health_controller.dart';
+import 'health_manager/views/health_home.dart';
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize & prepare the health controller (opens sqlite DB)
   final healthController = HealthController();
   await healthController.init();
 
-  
-  // NOTE: Initialization of the SQLite DB is implicitly handled by the HealthController constructor
-  
-  await Firebase.initializeApp(options: FirebaseOptions(
-    apiKey: "AIzaSyBpr_LhYBMH1NPVvHkNuoJ775Wtw4NORAY",
-     appId: "1:184902571321:android:d9d124a16e2c97b51f84e8", 
-     messagingSenderId: "184902571321",
-      projectId: "dailysync-9f0e8"));
-      
-  // Register Controllers
+  // Initialize Firebase (keep your existing config)
+  await Firebase.initializeApp(
+    options: const FirebaseOptions(
+      apiKey: "AIzaSyBpr_LhYBMH1NPVvHkNuoJ775Wtw4NORAY",
+      appId: "1:184902571321:android:d9d124a16e2c97b51f84e8",
+      messagingSenderId: "184902571321",
+      projectId: "dailysync-9f0e8",
+    ),
+  );
+
+  // Initialize theme controller (or other controllers you already had)
+  final themeController = ThemeController();
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ThemeController()),
-        ChangeNotifierProvider(create: (_) => HealthController()), 
+        // Use the existing instance of HealthController so there's only one.
+        ChangeNotifierProvider<HealthController>.value(value: healthController),
+        ChangeNotifierProvider<ThemeController>.value(value: themeController),
+        // Keep other providers here if you have them (do NOT remove)
       ],
       child: const HealthApp(),
     ),
   );
 }
 
-
 class HealthApp extends StatelessWidget {
   const HealthApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Use the renamed ThemeController
     return Consumer<ThemeController>(
       builder: (context, themeNotifier, child) {
         return MaterialApp(
           title: 'Health Manager',
           debugShowCheckedModeBanner: false,
-
-          // Define your light theme
           theme: ThemeData(
             brightness: Brightness.light,
             primarySwatch: Colors.teal,
@@ -60,42 +66,32 @@ class HealthApp extends StatelessWidget {
             fontFamily: 'Roboto',
             cardTheme: CardTheme(
               elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               color: Colors.white,
             ),
-             chipTheme: ChipThemeData(
-                backgroundColor: Colors.teal.withOpacity(0.1),
-                labelStyle: TextStyle(color: Colors.teal[800])),
+            chipTheme: ChipThemeData(backgroundColor: Colors.teal.withOpacity(0.1), labelStyle: TextStyle(color: Colors.teal[800])),
           ),
-
-          // Define your dark theme
           darkTheme: ThemeData(
             brightness: Brightness.dark,
             primarySwatch: Colors.teal,
             scaffoldBackgroundColor: const Color(0xFF121212),
             cardTheme: CardTheme(
               elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               color: const Color(0xFF1E1E1E),
             ),
-            appBarTheme: const AppBarTheme(
-              elevation: 0,
-              backgroundColor: Color(0xFF121212),
-            ),
-            chipTheme: ChipThemeData(
-                backgroundColor: Colors.teal.withOpacity(0.2),
-                labelStyle: const TextStyle(color: Colors.tealAccent)),
+            appBarTheme: const AppBarTheme(elevation: 0, backgroundColor: Color(0xFF121212)),
+            chipTheme: ChipThemeData(backgroundColor: Colors.teal.withOpacity(0.2), labelStyle: const TextStyle(color: Colors.tealAccent)),
             fontFamily: 'Roboto',
           ),
-
-          // Set the theme mode based on the controller
           themeMode: themeNotifier.themeMode,
-
           home: const SplashScreen(),
+
+          // Add a route for the Health module so you can navigate to it from anywhere:
+          routes: {
+            '/health': (_) => const HealthHome(),
+            // add other app routes here as needed
+          },
         );
       },
     );

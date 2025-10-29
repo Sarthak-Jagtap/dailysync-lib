@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-// import '../../db/db_helper.dart'; // No longer needed here
 
 class WeeklyChart extends StatelessWidget {
   final Map<String, int> dataMap; // date string -> value (e.g., '2025-10-26' -> 1000)
@@ -10,6 +9,9 @@ class WeeklyChart extends StatelessWidget {
   final Color barColor;
   final bool showTarget;
   final int? target; // Optional target value
+  // --- NEW PARAMETERS ---
+  final double? maxYValue; // Optional explicit max Y value
+  final double? interval;  // Optional explicit Y axis interval
 
   const WeeklyChart({
     super.key,
@@ -18,6 +20,8 @@ class WeeklyChart extends StatelessWidget {
     required this.barColor,
     this.showTarget = false,
     this.target,
+    this.maxYValue, // Added to constructor
+    this.interval,   // Added to constructor
   });
 
   @override
@@ -30,61 +34,69 @@ class WeeklyChart extends StatelessWidget {
       return const Center(child: Text('No data for the week'));
     }
 
+    // --- UPDATED Y-AXIS LOGIC ---
     // Determine max Y value for chart scaling
-    int maxVal = sortedEntries.map((e) => e.value).fold<int>(0, (p, n) => n > p ? n : p);
-    if (showTarget && target != null && target! > maxVal) {
-      maxVal = target!; // Ensure target line is visible if it's higher than data
+    double calculatedMaxY;
+    if (maxYValue != null && maxYValue! > 0) {
+      // Use provided maxYValue if valid
+      calculatedMaxY = maxYValue!;
+    } else {
+      // Calculate max based on data and target otherwise
+      int maxDataVal = sortedEntries.map((e) => e.value).fold<int>(0, (p, n) => n > p ? n : p);
+      if (showTarget && target != null && target! > maxDataVal) {
+        maxDataVal = target!;
+      }
+      calculatedMaxY = (maxDataVal == 0) ? 5 : (maxDataVal * 1.2).ceilToDouble(); // Add 20% padding if calculated
     }
-    final double maxY = (maxVal == 0) ? 5 : (maxVal * 1.2).ceilToDouble(); // Add 20% padding
 
-    // Create BarChartGroupData list
+    // Determine interval
+    final double appliedInterval = interval ?? (calculatedMaxY / 4 > 1 ? (calculatedMaxY / 4).ceilToDouble() : 1);
+
+
+    // Create BarChartGroupData list (No changes here)
     final List<BarChartGroupData> barGroups = [];
     for (var i = 0; i < sortedEntries.length; i++) {
       final value = sortedEntries[i].value.toDouble();
       barGroups.add(
         BarChartGroupData(
-          x: i, // Index represents the day of the week (0=Sun, 1=Mon, ...)
+          x: i,
           barRods: [
             BarChartRodData(
               toY: value,
               color: barColor,
-              width: 16, // Bar width
+              width: 16,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(4),
                 topRight: Radius.circular(4),
               ),
-               // Display value on top of the bar using stack items (optional visual cue)
                rodStackItems: [
-                 BarChartRodStackItem(0, value, barColor.withOpacity(0.3), // Slightly transparent base
-                   BorderSide(color: Colors.grey.shade300, width: 0.5) // Optional subtle border
+                 BarChartRodStackItem(0, value, barColor.withOpacity(0.3),
+                   BorderSide(color: Colors.grey.shade300, width: 0.5)
                  ),
                ],
             ),
           ],
-           // --- REMOVED this line to disable constant tooltip display ---
-           // showingTooltipIndicators: value > 0 ? [0] : [],
         ),
       );
     }
 
-    // Create labels for the bottom axis (days of the week)
+    // Create labels for the bottom axis (No changes here)
     final List<String> weekLabels = sortedEntries.map((entry) {
-        // Parse the date string key and format it as 'E' (e.g., 'Sun')
         final dt = DateFormat('yyyy-MM-dd').parse(entry.key);
-        return DateFormat('E').format(dt).substring(0,1); // Use single letter S, M, T...
+        return DateFormat('E').format(dt).substring(0,1);
     }).toList();
 
 
     return Padding(
-      // Adjust padding if labels were overlapping
       padding: const EdgeInsets.only(top: 16, right: 16, left: 8, bottom: 8),
       child: BarChart(
         BarChartData(
-          maxY: maxY,
+          // --- USE CALCULATED VALUES ---
+          maxY: calculatedMaxY,
           minY: 0,
           barGroups: barGroups,
           titlesData: FlTitlesData(
-            // Bottom Axis Titles (Days of Week)
+            // Bottom Axis Titles (No changes here)
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
@@ -93,53 +105,52 @@ class WeeklyChart extends StatelessWidget {
                   if (index < 0 || index >= weekLabels.length) return const SizedBox.shrink();
                   return SideTitleWidget(
                      axisSide: meta.axisSide,
-                     space: 4, // Space between axis and label
+                     space: 4,
                      child: Text(weekLabels[index], style: const TextStyle(fontSize: 10))
                   );
                 },
-                reservedSize: 22, // Space reserved for labels
+                reservedSize: 22,
               ),
             ),
-            // Left Axis Titles (Values)
+            // Left Axis Titles (Values) - Use appliedInterval
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 40, // Space for labels
-                interval: maxY / 4 > 1 ? (maxY / 4).ceilToDouble() : 1, // Adjusted interval
+                reservedSize: 40,
+                // --- USE APPLIED INTERVAL ---
+                interval: appliedInterval,
                  getTitlesWidget: (value, meta) {
-                   // Show labels at intervals
-                   if (value % meta.appliedInterval == 0) {
-                      return Text(valueLabel(value), style: const TextStyle(fontSize: 10));
+                   // Show labels at intervals, ensuring 0 is shown
+                   if (value == 0 || value % meta.appliedInterval == 0) {
+                      // Ensure label fits, especially for 100%
+                      return Text(valueLabel(value), style: const TextStyle(fontSize: 10), textAlign: TextAlign.right,);
                    }
                    return const SizedBox.shrink();
                   },
               ),
             ),
-            // Hide Top and Right Axis Titles
             topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
-          // Grid lines
+          // Grid lines - Use appliedInterval
           gridData: FlGridData(
             show: true,
-            drawVerticalLine: false, // Hide vertical grid lines
-            horizontalInterval: maxY / 4 > 1 ? (maxY / 4).ceilToDouble() : 1, // Match left titles interval
+            drawVerticalLine: false,
+            // --- USE APPLIED INTERVAL ---
+            horizontalInterval: appliedInterval,
              getDrawingHorizontalLine: (value) {
                return FlLine(
-                 color: Colors.grey.shade300, // Light grey grid lines
+                 color: Colors.grey.shade300,
                  strokeWidth: 0.5,
                );
              },
           ),
-          // Bar touch interactions & Tooltips (This section handles the on-hold display)
+          // Bar touch interactions & Tooltips (No changes here)
           barTouchData: BarTouchData(
-             enabled: true, // Enable tooltips on touch/hold
+             enabled: true,
              touchTooltipData: BarTouchTooltipData(
-                // Use getTooltipColor for background
                 getTooltipColor: (group) => Colors.blueGrey,
-                 // Tooltip text formatting
                 getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                   // Ensure groupIndex is within bounds before accessing sortedEntries
                    String weekDay = '';
                    if (groupIndex >= 0 && groupIndex < sortedEntries.length) {
                       weekDay = DateFormat('EEEE').format(DateFormat('yyyy-MM-dd').parse(sortedEntries[groupIndex].key));
@@ -149,8 +160,8 @@ class WeeklyChart extends StatelessWidget {
                       const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14,),
                       children: <TextSpan>[
                          TextSpan(
-                           text: valueLabel(rod.toY), // Use the provided valueLabel function
-                           style: const TextStyle( // Keep style distinct
+                           text: valueLabel(rod.toY),
+                           style: const TextStyle(
                              color: Colors.yellow,
                              fontSize: 12,
                              fontWeight: FontWeight.w500,
@@ -159,46 +170,42 @@ class WeeklyChart extends StatelessWidget {
                        ],
                    );
                  },
-                 tooltipPadding: const EdgeInsets.all(8), // Add some padding
-                 tooltipMargin: 8, // Margin above bar
-                 // Use tooltipHorizontalAlignment
+                 tooltipPadding: const EdgeInsets.all(8),
+                 tooltipMargin: 8,
                  tooltipHorizontalAlignment: FLHorizontalAlignment.center,
                  fitInsideHorizontally: true,
                  fitInsideVertically: true,
                  tooltipRoundedRadius: 4,
              ),
-             // Optional: Handle touch events if needed
-             // touchCallback: (FlTouchEvent event, BarTouchResponse? response) {},
           ),
-          // Chart border
+          // Chart border (No changes here)
           borderData: FlBorderData(
-            show: true, // Show border
+            show: true,
              border: Border(
-               bottom: BorderSide(color: Colors.grey.shade400, width: 1), // Only bottom border
-               left: BorderSide(color: Colors.grey.shade400, width: 1), // Only left border
+               bottom: BorderSide(color: Colors.grey.shade400, width: 1),
+               left: BorderSide(color: Colors.grey.shade400, width: 1),
              ),
           ),
-          // Target Line (if enabled)
+          // Target Line (No changes here)
           extraLinesData: (showTarget && target != null && target! > 0)
               ? ExtraLinesData(horizontalLines: [
                   HorizontalLine(
                     y: target!.toDouble(),
                     color: Colors.redAccent.withOpacity(0.8),
                     strokeWidth: 1.5,
-                    // dashArray: [], // Ensure solid line
                     label: HorizontalLineLabel(
                       show: true,
-                      alignment: Alignment.topRight, // Position label
+                      alignment: Alignment.topRight,
                       padding: const EdgeInsets.only(right: 5, bottom: 2),
                       style: TextStyle(color: Colors.redAccent.shade700, fontSize: 10, fontWeight: FontWeight.bold),
-                      labelResolver: (line) => 'Target: $target' // Display target value
+                      labelResolver: (line) => 'Target: $target'
                     ),
                   ),
                 ])
-              : ExtraLinesData(), // Empty if target line not shown
+              : ExtraLinesData(),
         ),
-        swapAnimationDuration: const Duration(milliseconds: 150), // Optional animation
-        swapAnimationCurve: Curves.linear, // Optional animation
+        swapAnimationDuration: const Duration(milliseconds: 150),
+        swapAnimationCurve: Curves.linear,
       ),
     );
   }

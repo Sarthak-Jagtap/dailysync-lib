@@ -3,8 +3,8 @@
 import 'package:dailysync/views/dashboard.dart';
 import 'package:dailysync/health_manager/views/health_home.dart';
 // [NEW IMPORTS]
-import 'package:dailysync/views/routine_main_screen.dart'; // <--- ADD THIS
-import 'package:dailysync/views/productivity_main_screen.dart'; // <--- ADD THIS
+import 'package:dailysync/routine_manager/views/routine_main_screen.dart'; // <--- UPDATED
+import 'package:dailysync/views/productivity_main_screen.dart'; 
 
 import 'package:dailysync/controllers/theme_controller.dart';
 import 'package:dailysync/views/todo_main.dart';
@@ -13,10 +13,7 @@ import 'package:provider/provider.dart';
 import 'profile_screen.dart';
 
 
-// ... (HomeDashboardTemp and TodoMainTemp remain unchanged)
-
 class HomeScreen extends StatefulWidget {
-  // The onToggleTheme parameter is no longer needed
   const HomeScreen({super.key});
 
   @override
@@ -33,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const HomeDashboard(), // Dashboard summary
       const HealthHome(), // Health component
       const Center(child: Text("Finance Screen")), // Your Expense/Finance Manager Placeholder
-      const ProductivityMainScreen(), // <--- MODIFIED TO USE NEW SCREEN
+      const ProductivityMainScreen(), 
       const TodoMain(),
       const RoutineMainScreen(), // <--- MODIFIED TO USE NEW SCREEN
     ];
@@ -54,12 +51,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         // Ensure the title reflects the current screen
-        title: Text(_getAppBarTitle(_selectedIndex)), // <--- MODIFIED
+        title: Text(_getAppBarTitle(_selectedIndex)), 
         actions: [
           IconButton(
             icon: const Icon(Icons.person_outline),
             onPressed: () {
-              // This now navigates to your Profile Screen
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const ProfileScreen()),
               );
@@ -69,7 +65,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
 
       // The main body of the screen, which changes based on the selected tab
-      body: _pages[_selectedIndex],
+      // Use an IndexedStack to preserve the state of each tab
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
+
 
       // Your bottom navigation bar remains the same
       bottomNavigationBar: BottomNavigationBar(

@@ -7,16 +7,23 @@ import 'package:provider/provider.dart';
 import 'package:dailysync/controllers/theme_controller.dart';
 import 'package:dailysync/views/splash_screen.dart';
 
-// Health manager imports (ensure files exist under lib/health_manager/)
+// Health manager imports
 import 'health_manager/controllers/health_controller.dart';
 import 'health_manager/views/health_home.dart';
+
+// --- NEW Routine Manager Import ---
+import 'routine_manager/controllers/routine_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize & prepare the health controller (opens sqlite DB)
+  // Initialize & prepare the health controller
   final healthController = HealthController();
   await healthController.init();
+
+  // --- NEW: Initialize & prepare the routine controller ---
+  final routineController = RoutineController();
+  await routineController.init();
 
   // Initialize Firebase (keep your existing config)
   await Firebase.initializeApp(
@@ -28,7 +35,7 @@ Future<void> main() async {
     ),
   );
 
-  // Initialize theme controller (or other controllers you already had)
+  // Initialize theme controller
   final themeController = ThemeController();
 
   runApp(
@@ -36,15 +43,19 @@ Future<void> main() async {
       providers: [
         // Use the existing instance of HealthController so there's only one.
         ChangeNotifierProvider<HealthController>.value(value: healthController),
+        
+        // --- NEW: Add the RoutineController ---
+        ChangeNotifierProvider<RoutineController>.value(value: routineController),
+        
         ChangeNotifierProvider<ThemeController>.value(value: themeController),
-        // Keep other providers here if you have them (do NOT remove)
+        // Keep other providers here if you have them
       ],
-      child: const HealthApp(),
+      child: const HealthApp(), // Renamed from DailySyncApp to HealthApp
     ),
   );
 }
 
-class HealthApp extends StatelessWidget {
+class HealthApp extends StatelessWidget { // Renamed from DailySyncApp
   const HealthApp({super.key});
 
   @override
@@ -52,7 +63,7 @@ class HealthApp extends StatelessWidget {
     return Consumer<ThemeController>(
       builder: (context, themeNotifier, child) {
         return MaterialApp(
-          title: 'Health Manager',
+          title: 'DailySync', // Changed title back
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
             brightness: Brightness.light,
@@ -87,7 +98,6 @@ class HealthApp extends StatelessWidget {
           themeMode: themeNotifier.themeMode,
           home: const SplashScreen(),
 
-          // Add a route for the Health module so you can navigate to it from anywhere:
           routes: {
             '/health': (_) => const HealthHome(),
             // add other app routes here as needed

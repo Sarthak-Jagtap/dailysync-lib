@@ -1,6 +1,6 @@
-import 'package:dailysync/views/summary_cards/finance_summary_card.dart';
-import 'package:dailysync/views/summary_cards/health_summary_card.dart';
-import 'package:dailysync/views/summary_cards/routine_summary_card.dart';
+import 'package:dailysync/views/finance_summary_card.dart';
+import 'package:dailysync/views/health_summary_card.dart';
+import 'package:dailysync/views/routine_summary_card.dart';
 import 'package:dailysync/views/todolist_summary_card.dart';
 import 'package:flutter/material.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';

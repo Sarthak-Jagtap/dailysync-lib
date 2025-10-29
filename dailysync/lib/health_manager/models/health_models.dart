@@ -1,6 +1,7 @@
 // lib/health_manager/models/health_models.dart
-/// Store dates as ISO 'YYYY-MM-DD' strings for easy grouping.
-String dateToKey(DateTime dt) => '${dt.year.toString().padLeft(4,'0')}-${dt.month.toString().padLeft(2,'0')}-${dt.day.toString().padLeft(2,'0')}';
+
+// REMOVED dateToKey function from here. It's now defined in db_helper.dart
+// String dateToKey(DateTime dt) => '${dt.year.toString().padLeft(4,'0')}-${dt.month.toString().padLeft(2,'0')}-${dt.day.toString().padLeft(2,'0')}';
 
 class WaterEntry {
   final int? id;

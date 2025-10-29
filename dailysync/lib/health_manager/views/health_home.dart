@@ -1,21 +1,18 @@
 // lib/health_manager/views/health_home.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../controllers/health_controller.dart';
 import 'water_screen.dart';
 import 'diet_screen.dart';
 import 'steps_screen.dart';
-import 'history_screen.dart';
+import 'sleep_screen.dart'; // Import Sleep Screen
 
 class HealthHome extends StatelessWidget {
   const HealthHome({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: Provider.of<HealthController>(context, listen: false),
-      child: const HealthTabs(),
-    );
+    // No need to create a new provider here if one is already provided higher up the tree
+    // Just ensure HealthController is available via Provider
+    return const HealthTabs();
   }
 }
 
@@ -25,37 +22,73 @@ class HealthTabs extends StatefulWidget {
   State<HealthTabs> createState() => _HealthTabsState();
 }
 
-class _HealthTabsState extends State<HealthTabs> {
-  int _index = 0;
+class _HealthTabsState extends State<HealthTabs> with SingleTickerProviderStateMixin { // Added TickerProvider
+  late TabController _tabController;
+
   final _pages = const [
     WaterScreen(),
     DietScreen(),
     StepsScreen(),
-    HistoryScreen(),
+    SleepScreen(), // Added SleepScreen
   ];
 
-  final _titles = const ['Water', 'Diet', 'Steps', 'History'];
+  final _tabs = const [
+    Tab(icon: Icon(Icons.local_drink), text: 'Water'),
+    Tab(icon: Icon(Icons.food_bank_outlined), text: 'Diet'), // Changed icon
+    Tab(icon: Icon(Icons.directions_walk), text: 'Steps'),
+    Tab(icon: Icon(Icons.bedtime_outlined), text: 'Sleep'), // Added Sleep Tab
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: _tabs.length, vsync: this);
+  }
+
+   @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {
+     final Color primaryColor = Colors.green.shade700;
+     final Color indicatorColor = Colors.green.shade100; // Lighter color for indicator
+     final Color labelColor = Colors.white;
+     final Color unselectedLabelColor = Colors.white.withOpacity(0.7);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Health Manager - ${_titles[_index]}'),
-        backgroundColor: Colors.indigo,
+        automaticallyImplyLeading: false, // Don't show back button if nested
+        backgroundColor: primaryColor,
+        elevation: 0, // Remove shadow
+        // title: null, // Removed title
+        // toolbarHeight: kTextTabBarHeight, // Set height to match TabBar - causes layout issues
+        bottom: PreferredSize( // Use PreferredSize to control height explicitly
+            preferredSize: const Size.fromHeight(kToolbarHeight), // Standard AppBar height for the TabBar
+            child: Container( // Container to allow background color for TabBar area
+                 color: primaryColor, // Match AppBar color
+                 child: TabBar(
+                   controller: _tabController,
+                   tabs: _tabs,
+                   indicatorColor: indicatorColor,
+                   indicatorWeight: 3.0,
+                   labelColor: labelColor,
+                   unselectedLabelColor: unselectedLabelColor,
+                   labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600), // Adjust font size if needed
+                   unselectedLabelStyle: const TextStyle(fontSize: 10),
+                 ),
+            ),
+        ),
       ),
-      body: _pages[_index],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _index,
-        selectedItemColor: Colors.teal,
-        unselectedItemColor: Colors.grey[600],
-        onTap: (i) => setState(() => _index = i),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.local_drink), label: 'Water'),
-          BottomNavigationBarItem(icon: Icon(Icons.food_bank), label: 'Diet'),
-          BottomNavigationBarItem(icon: Icon(Icons.directions_walk), label: 'Steps'),
-          BottomNavigationBarItem(icon: Icon(Icons.show_chart), label: 'History'),
-        ],
+      body: TabBarView(
+        controller: _tabController,
+        children: _pages,
       ),
+      // Removed BottomNavigationBar
     );
   }
 }
+
